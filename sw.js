@@ -1,8 +1,8 @@
-const CACHE = 'planner-v1';
-const FILES = ['/', '/index.html', '/manifest.json'];
+const CACHE = 'planner-v11';
+const FILES = ['/Planner/', '/Planner/index.html', '/Planner/manifest.json'];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)));
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES).catch(()=>{})));
   self.skipWaiting();
 });
 
@@ -12,5 +12,5 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+  e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
 });

@@ -188,7 +188,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   <div class="sheet-body" id="taskList"></div>
   <div class="add-form">
     <input class="task-input" type="text" id="taskInput" placeholder="название задачи..."
-      autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" />
+      autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" role="presentation" />
     <div class="emoji-row" id="emojiRow">
       <button class="emoji-btn" data-e="👟" onclick="pe(this)">👟</button>
       <button class="emoji-btn" data-e="🦊" onclick="pe(this)">🦊</button>
@@ -210,8 +210,6 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
       <button class="emoji-btn" data-e="🔵" onclick="pe(this)">🔵</button>
       <button class="emoji-btn" data-e="🟣" onclick="pe(this)">🟣</button>
       <button class="emoji-btn" data-e="🟤" onclick="pe(this)">🟤</button>
-      <button class="emoji-btn" data-e="🏠" onclick="pe(this)">🏠</button>
-      <button class="emoji-btn" data-e="⚪" onclick="pe(this)">⚪</button>
       <button class="emoji-btn" data-e="🧊" onclick="pe(this)">🧊</button>
       <input class="custom-emoji-input" id="customEmoji" type="text" maxlength="2" placeholder="✏️"
         autocomplete="off" autocorrect="off" autocapitalize="off" />
@@ -273,11 +271,7 @@ const DL=['вс','пн','вт','ср','чт','пт','сб'];
 let cY,cM,selDate,selE='',rType='weekly',rDates=[],activeSheet=null,editIdx=null;
 let tasks={},recurring=[];
 
-// cube emoji visual token
-const CUBE_TOKEN='[cube]';
-const CUBE_SVG=`<svg width="18" height="18" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg" style="display:inline-block;vertical-align:middle"><polygon points="10,2 18,6 18,14 10,18 2,14 2,6" fill="#f0f4f8" stroke="#a0b0c8" stroke-width="1"/><polygon points="10,2 18,6 10,10 2,6" fill="#e8eef5" stroke="#a0b0c8" stroke-width="1"/><polygon points="2,6 10,10 10,18 2,14" fill="#c8d8e8" stroke="#a0b0c8" stroke-width="1"/><polygon points="18,6 10,10 10,18 18,14" fill="#d8e4ef" stroke="#a0b0c8" stroke-width="1"/></svg>`;
-
-function renderEmoji(e){if(!e)return'';if(e===CUBE_TOKEN)return CUBE_SVG;return e;}
+function renderEmoji(e){if(!e)return'';return e;}
 
 function load(){try{tasks=JSON.parse(localStorage.getItem('pl_t')||'{}');}catch(e){tasks={};}try{recurring=JSON.parse(localStorage.getItem('pl_r')||'[]');}catch(e){recurring=[];}}
 function save(){localStorage.setItem('pl_t',JSON.stringify(tasks));localStorage.setItem('pl_r',JSON.stringify(recurring));}
@@ -321,8 +315,8 @@ function render(){
     else{day=i-dow+2;}
     const key=dk(y,m,day);const all=allFor(key);
     const isToday=!other&&day===now.getDate()&&m===now.getMonth()&&y===now.getFullYear();
-    const pend=all.filter(t=>!t.done).map(t=>t.emoji===CUBE_TOKEN?'□':t.emoji||'•').join('');
-    const done=all.filter(t=>t.done).map(t=>t.emoji===CUBE_TOKEN?'□':t.emoji||'•').join('');
+    const pend=all.filter(t=>!t.done).map(t=>t.emoji||'•').join('');
+    const done=all.filter(t=>t.done).map(t=>t.emoji||'•').join('');
     const c=document.createElement('div');
     c.className='day-cell'+(other?' other-month':'')+(isToday?' today':'')+(all.length?' has-tasks':'');
     c.innerHTML=`<div class="day-num">${day}</div><div class="day-emojis">${pend}${done?'<span style="opacity:0.35">'+done+'</span>':''}</div>`;
@@ -345,7 +339,8 @@ function renderList(){
     if(editIdx===i&&!t.isRec){
       return`<div class="task-edit-form">
         <input class="task-edit-input" id="editInp" value="${t.name.replace(/"/g,'&quot;')}"
-          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" />
+          autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+          onkeydown="if(event.key==='Enter')saveEdit(${i});if(event.key==='Escape')cancelEdit();" />
         <button class="task-edit-save" onclick="saveEdit(${i})">✓</button>
         <button class="task-edit-cancel" onclick="cancelEdit()">✕</button>
       </div>`;
@@ -360,7 +355,7 @@ function renderList(){
         </div>
       </div>
       <div class="task-actions">
-        ${!t.isRec?`<button class="task-edit-btn" onclick="startEdit(${i})">✏️</button>`:''}
+        ${!t.isRec?`<button class="task-edit-btn" onclick="startEdit(${i})" style="font-size:12px;padding:3px 7px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);">ред.</button>`:''}
         <button class="task-delete" onclick="del(${i})">×</button>
       </div>
     </div>`;
@@ -396,7 +391,6 @@ function del(i){
 }
 
 function pe(btn){document.querySelectorAll('.emoji-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selE=btn.dataset.e;document.getElementById('customEmoji').value='';}
-function peCube(btn){document.querySelectorAll('.emoji-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selE=CUBE_TOKEN;document.getElementById('customEmoji').value='';}
 
 function toggleRepeat(){const cb=document.getElementById('repeatCheck');cb.checked=!cb.checked;document.getElementById('repeatBody').classList.toggle('open',cb.checked);}
 function prt(btn){document.querySelectorAll('.rtype-btn').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');rType=btn.dataset.t;document.getElementById('daysRow').style.display=rType==='weekly'?'flex':'none';document.getElementById('datesPicker').style.display=rType==='dates'?'block':'none';}
@@ -450,7 +444,7 @@ function openRec(){
     else if(r.type==='weekly')d='по: '+(r.days||[]).map(x=>DL[x]).join(', ');
     else if(r.type==='dates')d='даты: '+(r.dates||[]).join(', ');
     if(r.until)d+=' · до '+r.until;
-    const eDisp=r.emoji===CUBE_TOKEN?CUBE_SVG:(r.emoji||'📌');
+    const eDisp=r.emoji||'📌';
     return`<div class="rec-item"><span style="font-size:22px;display:flex;align-items:center;">${eDisp}</span><div class="rec-info"><div class="rec-name">${r.name}</div><div class="rec-desc">${d}</div></div><button class="task-delete" onclick="delRec('${r.id}')">×</button></div>`;
   }).join('');}
   showSheet('recSheet');
@@ -472,7 +466,7 @@ function exportICS(){
   all.forEach((t,i)=>{
     const uid=`planner-${selDate}-${i}@app`;
     const name=t.name.replace(/[\\;,]/g,'\\$&');
-    const emoji=t.emoji&&t.emoji!==CUBE_TOKEN?t.emoji+' ':'';
+    const emoji=t.emoji?t.emoji+' ':'';
     let dtstart,dtend,alarm='';
     if(t.reminder){
       const[hh,mm]=t.reminder.split(':');
