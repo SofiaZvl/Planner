@@ -298,7 +298,7 @@ function allFor(key){
   return[...man,...rec];
 }
 
-function init(){load();const n=new Date();cY=n.getFullYear();cM=n.getMonth();render();if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});}
+function init(){load();const n=new Date();cY=n.getFullYear();cM=n.getMonth();render();if('serviceWorker'in navigator)navigator.serviceWorker.register('/Planner/sw.js').catch(()=>{});}
 
 function changeMonth(dir){cM+=dir;if(cM>11){cM=0;cY++;}if(cM<0){cM=11;cY--;}render();}
 
