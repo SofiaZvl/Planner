@@ -187,7 +187,7 @@ html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Sego
   </div>
   <div class="sheet-body" id="taskList"></div>
   <div class="add-form">
-    <input class="task-input" type="search" id="taskInput" placeholder="название задачи..."
+    <input class="task-input" type="text" id="taskInput" placeholder="название задачи..."
       autocomplete="new-password" autocorrect="off" autocapitalize="off" spellcheck="false" role="presentation" />
     <div class="emoji-row" id="emojiRow">
       <button class="emoji-btn" data-e="👟" onclick="pe(this)">👟</button>
@@ -281,6 +281,7 @@ function pdk(k){const[y,m,d]=k.split('-');return{y:+y,m:+m-1,d:+d};}
 function recForDate(key){
   const{y,m,d}=pdk(key);const dt=new Date(y,m,d);const dow=dt.getDay();
   return recurring.filter(r=>{
+    if(localStorage.getItem(`skip_${r.id}_${key}`))return false;
     if(r.until&&dt>new Date(r.until))return false;
     if(r.type==='daily')return true;
     if(r.type==='weekly')return(r.days||[]).includes(dow);
@@ -298,7 +299,7 @@ function allFor(key){
   return[...man,...rec];
 }
 
-function init(){load();const n=new Date();cY=n.getFullYear();cM=n.getMonth();render();if('serviceWorker'in navigator)navigator.serviceWorker.register('/Planner/sw.js').catch(()=>{});}
+function init(){load();const n=new Date();cY=n.getFullYear();cM=n.getMonth();render();if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});}
 
 function changeMonth(dir){cM+=dir;if(cM>11){cM=0;cY++;}if(cM<0){cM=11;cY--;}render();}
 
@@ -345,6 +346,9 @@ function renderList(){
         <button class="task-edit-cancel" onclick="cancelEdit()">✕</button>
       </div>`;
     }
+    const recActions=t.isRec?`
+      <button class="task-edit-btn" onclick="skipRec('${t.rid}')" style="font-size:11px;padding:3px 7px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);">пропустить</button>
+      <button class="task-edit-btn" onclick="moveRec('${t.rid}','${t.name}','${t.emoji||''}')" style="font-size:11px;padding:3px 7px;border:1px solid var(--gold-border);border-radius:8px;background:var(--gold-light);color:var(--gold);">перенести</button>`:'';
     return`<div class="task-item">
       <button class="task-check ${t.done?'done':''}" onclick="tog(${i})">${t.done?'✓':''}</button>
       <div class="task-content">
@@ -353,6 +357,7 @@ function renderList(){
           ${t.reminder?`<span class="tag tag-reminder">🔔 ${t.reminder}</span>`:''}
           ${t.isRec?`<span class="tag tag-repeat">🔁 регулярная</span>`:''}
         </div>
+        ${t.isRec?`<div style="margin-top:5px;display:flex;gap:5px;flex-wrap:wrap;">${recActions}</div>`:''}
       </div>
       <div class="task-actions">
         ${!t.isRec?`<button class="task-edit-btn" onclick="startEdit(${i})" style="font-size:12px;padding:3px 7px;border:1px solid var(--border2);border-radius:8px;background:var(--surface2);">ред.</button>`:''}
@@ -374,6 +379,28 @@ function saveEdit(i){
   const mi=allFor(selDate).slice(0,i).filter(x=>!x.isRec).length;
   if(tasks[selDate]&&tasks[selDate][mi])tasks[selDate][mi].name=val;
   save();editIdx=null;renderList();
+}
+
+function skipRec(rid){
+  // mark this day as skipped for this recurring task
+  localStorage.setItem(`skip_${rid}_${selDate}`,'1');
+  render();renderList();
+}
+
+function moveRec(rid,name,emoji){
+  const dateStr=prompt('Перенести на дату (гггг-мм-дд):',getNextDay(selDate));
+  if(!dateStr||!dateStr.match(/^\d{4}-\d{2}-\d{2}$/))return;
+  // skip today
+  localStorage.setItem(`skip_${rid}_${selDate}`,'1');
+  // add as manual task on target date
+  if(!tasks[dateStr])tasks[dateStr]=[];
+  tasks[dateStr].push({name,emoji:emoji||'📌',done:false,reminder:null});
+  save();render();renderList();
+}
+
+function getNextDay(key){
+  const{y,m,d}=pdk(key);const dt=new Date(y,m,d+1);
+  return dk(dt.getFullYear(),dt.getMonth(),dt.getDate());
 }
 
 function tog(i){
